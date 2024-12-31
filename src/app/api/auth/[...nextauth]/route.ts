@@ -1,25 +1,22 @@
-import NextAuth from "next-auth";
+import NextAuth, { AuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { loginUser } from "@/lib/actions/user.actions";
 
-export const handler = NextAuth({
+export const authOptions: AuthOptions = {
   providers: [
     CredentialsProvider({
       name: "Credentials",
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
-      } as any,
+      },
       async authorize(credentials) {
         if (credentials?.email && credentials?.password) {
           const user = await loginUser(credentials.email, credentials.password);
           if (user) {
             return user;
-          } else {2
-            return null;
           }
         }
-
         return null;
       },
     }),
@@ -35,7 +32,7 @@ export const handler = NextAuth({
       }
       return token;
     },
-    async session({ session, token }: any) {
+    async session({ session, token }) {
       if (token) {
         session.id = token.id;
       }
@@ -43,6 +40,8 @@ export const handler = NextAuth({
     },
   },
   secret: process.env.NEXTAUTH_SECRET,
-});
+};
 
+// Export the default handler
+const handler = NextAuth(authOptions);
 export { handler as GET, handler as POST };

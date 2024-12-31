@@ -150,7 +150,7 @@ const SignUp: React.FC = () => {
                     />
                   </div>
                   <p className="text-xl font-semibold text-black">
-                    ProteinBind
+                    MedSynth
                   </p>
                 </div>
               </Link>
