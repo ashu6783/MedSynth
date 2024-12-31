@@ -1,13 +1,14 @@
-import NextAuth, { AuthOptions } from "next-auth";
+import NextAuth, { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { loginUser } from "@/lib/actions/user.actions";
 
-export const authOptions: AuthOptions = {
+// Define the NextAuth configuration
+export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
       name: "Credentials",
       credentials: {
-        email: { label: "Email", type: "email" },
+        email: { label: "Email", type: "email", placeholder: "example@example.com" },
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
@@ -17,24 +18,24 @@ export const authOptions: AuthOptions = {
             return user;
           }
         }
-        return null;
+        return null; // Return null if no user is found
       },
     }),
   ],
   session: {
     strategy: "jwt",
-    maxAge: 24 * 60 * 60,
+    maxAge: 24 * 60 * 60, // 1 day
   },
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.id = user.id;
+        token.id = user.id; // Attach user ID to the token
       }
       return token;
     },
-    async session({ session, token }) {
+    async session({ session, token }: any) {
       if (token) {
-        session.id = token.id;
+        session.id = token.id; // Attach token ID to the session
       }
       return session;
     },
@@ -42,6 +43,8 @@ export const authOptions: AuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
 };
 
-// Export the default handler
+// Create the NextAuth handler
 const handler = NextAuth(authOptions);
+
+// Export the HTTP methods
 export { handler as GET, handler as POST };
