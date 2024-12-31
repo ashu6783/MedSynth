@@ -3,6 +3,37 @@
 
 MedSynth_AI is an advanced platform built with the latest Next.js, designed to empower researchers and developers in the field of molecular research. With tools for visualizing molecular structures, generating custom molecules using SMILES notation, and real-time collaboration via group messaging, MedSynth_AI combines the power of AI with cutting-edge web technologies to accelerate research and decision-making.
 
+protected routes : Signing in for the Dashboard.
+![image](https://github.com/user-attachments/assets/c94590e2-db59-4ebf-afbd-47e2252bc6d1)
+
+The Dashboard
+
+![image](https://github.com/user-attachments/assets/a8c2387b-1f43-42d0-8519-3c35cc9f258b)
+
+Molecules Bank: Some saved molecules,we can add the molecules in it with its details after successful research.
+
+![image](https://github.com/user-attachments/assets/fe7bd25c-f4d0-4ba5-b253-7466b6046c39)
+
+Model: Generating Molecules by NVIDIA,S AI model using SMILES.
+
+![image](https://github.com/user-attachments/assets/98d23768-a86a-45ae-8b94-f7c98aa14984)
+
+example
+
+![image](https://github.com/user-attachments/assets/b5800408-8957-4ecc-bbdd-ad17e82d8cb8)
+
+
+Research: Finding about certain compound using pubchem api available.
+
+![image](https://github.com/user-attachments/assets/7639ae38-1fc2-4dfe-bb38-fcca45b56737)
+
+messaging: Real time chat functionality.
+
+![image](https://github.com/user-attachments/assets/fbb6987e-c663-4f11-b396-bbff3ecd5eb9)
+
+
+
+
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 ABOUT NVIDIA AI model (MolMIM):
