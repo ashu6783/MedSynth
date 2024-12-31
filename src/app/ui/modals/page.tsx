@@ -1,3 +1,4 @@
+// src/app/ui/modals/page.tsx
 import React from "react";
 
 interface ModalProps {
@@ -21,4 +22,14 @@ const Modal: React.FC<ModalProps> = ({ id, title, content, onCloseText }) => {
   );
 };
 
-export default Modal;
+export default function Page() {
+  return (
+    <div>
+      <Modal 
+        id="example-modal"
+        title="Example Modal"
+        content="This is an example modal content"
+      />
+    </div>
+  );
+}
