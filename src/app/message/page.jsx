@@ -1,10 +1,12 @@
+"use client";
+
 import dynamic from "next/dynamic";
 
 const Chat = dynamic(() => import("./chat"), {
-  ssr: false,
+  ssr: false, // Disable server-side rendering
 });
 
-function page() {
+function Page() {
   return (
     <main>
       <Chat />
@@ -12,4 +14,4 @@ function page() {
   );
 }
 
-export default page;
+export default Page;
