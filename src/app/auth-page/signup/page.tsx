@@ -432,7 +432,7 @@ const SignUp: React.FC = () => {
                     >
                       {/* Replace with any icon or image */}
                       <CameraIcon size={25} />
-                      <span className="text-gray-500 mt-2 text-sm">
+                      <span className="text-gray-600 mt-2 text-sm">
                         Choose Profile Picture
                       </span>
                     </div>
