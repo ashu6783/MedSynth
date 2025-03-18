@@ -30,13 +30,13 @@
     "target": "ES2017"
   },
   "include": [
-    "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
-    ".next/types/**/*.ts",
+    "next-env.d.ts",
     "src/app/message/chat-bot.jsx",
     "src/app/message/chat.jsx",
-    "src/app/message/page.jsx"
+    "src/app/message/page.jsx",
+    ".next/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"

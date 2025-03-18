@@ -1,3 +1,5 @@
+"use client"
+
 // src/app/ui/modals/page.tsx
 import React from "react";
 

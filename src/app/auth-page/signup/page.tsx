@@ -11,6 +11,7 @@ import {
   LockIcon,
   MailIcon,
   UserIcon,
+  CheckCircle,
 } from "lucide-react";
 
 const SignUp: React.FC = () => {
@@ -27,6 +28,7 @@ const SignUp: React.FC = () => {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [errors, setErrors] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -84,6 +86,9 @@ const SignUp: React.FC = () => {
     isSubmitting = true;
 
     setIsLoading(true);
+    // Clear any previous messages
+    setSuccessMessage(null);
+    setErrors(null);
 
     const formError = validateForm();
     if (formError) {
@@ -92,8 +97,6 @@ const SignUp: React.FC = () => {
       isSubmitting = false;
       return;
     }
-
-    setErrors(null);
 
     try {
       let base64Image = "";
@@ -110,6 +113,10 @@ const SignUp: React.FC = () => {
       const createdUser = await createUser(newUser);
       console.log(createdUser);
 
+      // Display success message
+      setSuccessMessage("Registration successful! You can now sign in with your credentials.");
+      
+      // Reset form
       setUser({
         email: "",
         firstName: "",
@@ -120,7 +127,6 @@ const SignUp: React.FC = () => {
         userBio: "",
       });
       setImageFile(null);
-      setIsLoading(false);
     } catch (error) {
       console.error("Error registering user:", error);
       setErrors("Registration failed.");
@@ -135,7 +141,7 @@ const SignUp: React.FC = () => {
       <ComponentHeader pageName="Sign Up" />
 
       <div className="rounded-lg border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
-        <div className="flex flex-wrap items-center" onSubmit={handleSubmit}>
+        <div className="flex flex-wrap items-center">
           <div className="hidden w-full xl:block xl:w-1/2">
             <div className="px-26 py-17.5 text-center">
               <Link className="mb-5.5 inline-block" href="/">
@@ -287,7 +293,7 @@ const SignUp: React.FC = () => {
             <div className="w-full p-4 sm:p-12.5 xl:p-17.5">
               <span className="mb-1.5 block font-medium">Start for free</span>
               <h2 className="mb-9 text-2xl font-bold text-black dark:text-white sm:text-title-xl2">
-                Sign Up to ProteinBind
+                Sign Up to MedSynth
               </h2>
 
               <div>
@@ -395,7 +401,7 @@ const SignUp: React.FC = () => {
                   </label>
                   <div className="relative">
                     <textarea
-                      name="userBio"
+                      name="bio"
                       value={user.userBio}
                       onChange={handleInputChange}
                       placeholder="Enter your bio"
@@ -411,14 +417,12 @@ const SignUp: React.FC = () => {
                   <div className="relative flex items-center justify-center">
                     {/* Hidden file input */}
                     <input
-                    aria-label="text"
                       type="file"
                       accept="image/*"
                       onChange={handleFileChange}
                       className="hidden"
                       id="fileInput"
                     />
-
                     {/* Custom icon for file input */}
                     <div
                       onClick={() =>
@@ -450,6 +454,13 @@ const SignUp: React.FC = () => {
                     ) : (
                       "Sign Up"
                     )}
+                    {/* Success Message */}
+              {successMessage && (
+                <div className="mb-6 flex items-center rounded-md bg-green-50 p-4 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                  <CheckCircle className="mr-2 h-5 w-5" />
+                  <p>{successMessage}</p>
+                </div>
+              )}
                   </button>
                 </div>
 

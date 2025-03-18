@@ -5,7 +5,6 @@ import bcrypt from "bcrypt";
 import User from "../database/models/user.model";
 import { connectToDatabase } from "../database/mongoose";
 import { handleError } from "../utils";
-import { sendVerificationEmail, sendResetPasswordEmail } from "./email.actions";
 
 export async function createUser(user: CreateUserParams) {
   try {
@@ -24,13 +23,6 @@ export async function createUser(user: CreateUserParams) {
       password: hashedPassword,
       userBio: user.userBio || "",
     });
-
-    const verificationUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/verify-email?token=${newUser._id}`;
-    await sendVerificationEmail(
-      newUser.email,
-      newUser.firstName || "User",
-      verificationUrl,
-    );
 
     return JSON.parse(JSON.stringify(newUser));
   } catch (error: any) {
@@ -58,41 +50,6 @@ export async function loginUser(email: string, password: string) {
   }
 }
 
-export async function verifyEmail(token: string) {
-  try {
-    await connectToDatabase();
-
-    const user = await User.findById(token);
-    if (!user) throw new Error("Invalid token or user not found");
-
-    user.isEmailVerified = true;
-    await user.save();
-
-    return JSON.parse(JSON.stringify(user));
-  } catch (error) {
-    handleError(error);
-  }
-}
-
-export async function requestPasswordReset(email: string) {
-  try {
-    await connectToDatabase();
-
-    const user = await User.findOne({ email });
-    if (!user) throw new Error("User not found");
-    const resetUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/reset-password?token=${user._id}`;
-    await sendResetPasswordEmail(
-      user.email,
-      user.firstName || "User",
-      resetUrl,
-    );
-
-    return true;
-  } catch (error) {
-    console.error(error);
-    throw error;
-  }
-}
 
 export async function resetPassword(token: string, newPassword: string) {
   try {
@@ -116,7 +73,7 @@ export async function resetPassword(token: string, newPassword: string) {
 export async function getUserById(userId: string) {
   try {
     await connectToDatabase();
-    const user = await User.findOne({ Id: userId });
+    const user = await User.findById(userId);
     if (!user) throw new Error("User not found");
     return JSON.parse(JSON.stringify(user));
   } catch (error) {
