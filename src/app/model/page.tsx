@@ -19,10 +19,18 @@ const ModalLayout = () => {
   const [minSimilarity, setMinSimilarity] = useState("0.3");
   const [particles, setParticles] = useState("30");
   const [iterations, setIterations] = useState("10");
-  const [molecules, setMolecules] = useState([]);
+  const [molecules, setMolecules] = useState<Molecule[]>([]);
   const [loading, setLoading] = useState(false);
-  const [history, setHistory] = useState([]);
-  const [userId, setUserId] = useState<string | null>(null);
+  interface HistoryEntry {
+    smiles: string;
+    numMolecules: number;
+    createdAt: string;
+    generatedMolecules: Array<{ structure: string; score: number }>;
+  }
+
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const [userId, setUserId] = useState(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -43,17 +51,38 @@ const ModalLayout = () => {
     fetchUserData();
   }, [session?.user?.email]);
 
-  const handleSubmit = async (e: any) => {
+  interface Payload {
+    algorithm: string;
+    num_molecules: number;
+    property_name: string;
+    minimize: boolean;
+    min_similarity: number;
+    particles: number;
+    iterations: number;
+    smi: string;
+  }
+
+  interface Molecule {
+    structure: string;
+    score: number;
+  }
+
+  interface ApiResponse {
+    molecules: string;
+  }
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
+    setError(null);
 
     const API_KEY =
       "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";
 
-    const invokeUrl =
-      "https://health.api.nvidia.com/v1/biology/nvidia/molmim/generate";
+    // Original API endpoint
+    const apiEndpoint = "https://health.api.nvidia.com/v1/biology/nvidia/molmim/generate";
 
-    const payload = {
+    const payload: Payload = {
       algorithm: "CMA-ES",
       num_molecules: parseInt(numMolecules),
       property_name: "QED",
@@ -65,19 +94,36 @@ const ModalLayout = () => {
     };
 
     try {
-      const response = await fetch(invokeUrl, {
+      // Solution 1: Use a proxy API route
+      const response = await fetch("/api/nvidia-proxy", {
         method: "POST",
-       
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          apiKey: API_KEY,
+          payload: payload,
+        }),
+      });
+
+      /* Solution 2: Use mode: "no-cors" (Comment out solution 1 and uncomment this if you prefer this approach)
+      const response = await fetch(apiEndpoint, {
+        method: "POST",
+        mode: "no-cors", // This prevents CORS errors but makes response unreadable
         headers: {
           Authorization: `Bearer ${API_KEY}`,
-          Accept: "application/json",
           "Content-Type": "application/json",
         },
         body: JSON.stringify(payload),
       });
+      */
 
-      const data = await response.json();
-      const generatedMolecules = JSON.parse(data.molecules).map((mol: any) => ({
+      if (!response.ok) {
+        throw new Error(`API request failed with status ${response.status}`);
+      }
+
+      const data: ApiResponse = await response.json();
+      const generatedMolecules: Molecule[] = JSON.parse(data.molecules).map((mol: any) => ({
         structure: mol.sample,
         score: mol.score,
       }));
@@ -106,6 +152,7 @@ const ModalLayout = () => {
       console.log(generatedMolecules);
     } catch (error) {
       console.error("Error fetching data:", error);
+      setError("Failed to generate molecules. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -192,6 +239,12 @@ const ModalLayout = () => {
                   />
                 </div>
 
+                {error && (
+                  <div className="mb-4.5 rounded-lg bg-red-100 p-3 text-red-700">
+                    {error}
+                  </div>
+                )}
+
                 <button
                   type="submit"
                   className="flex w-full justify-center rounded-lg bg-primary p-3 font-medium text-gray hover:bg-opacity-90"
@@ -210,7 +263,7 @@ const ModalLayout = () => {
               Molecule Generation History
             </h3>
             <div className="mt-4 max-h-96 overflow-y-auto">
-              {history.map((entry: any, index) => (
+              {history.map((entry, index) => (
                 <div key={index} className="border-b border-stroke py-3">
                   <p className="text-sm text-black dark:text-white">
                     <span className="font-bold">SMILES:</span> {entry.smiles}
@@ -240,9 +293,9 @@ const ModalLayout = () => {
 
       {molecules.length > 0 && (
         <div className="mt-8 rounded-lg bg-white p-2">
-          <div className="mt-8 flex flex-col  gap-2">
+          <div className="mt-8 flex flex-col gap-2">
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-              {molecules.map((mol: any, index) => (
+              {molecules.map((mol, index) => (
                 <MoleculeStructure
                   key={index}
                   id={`mol-${index + 1}`}
