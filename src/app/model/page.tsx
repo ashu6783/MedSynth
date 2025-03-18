@@ -71,16 +71,33 @@ const ModalLayout = () => {
     molecules: string;
   }
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
     setLoading(true);
     setError(null);
-
-    const API_KEY =
+  
+    const API_KEY: string =
       "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";
+  
+    interface Payload {
+      algorithm: string;
+      num_molecules: number;
+      property_name: string;
+      minimize: boolean;
+      min_similarity: number;
+      particles: number;
+      iterations: number;
+      smi: string;
+    }
 
-    // Original API endpoint
-    const apiEndpoint = "https://health.api.nvidia.com/v1/biology/nvidia/molmim/generate";
+    interface Molecule {
+      structure: string;
+      score: number;
+    }
+
+    interface ApiResponse {
+      molecules: string;
+    }
 
     const payload: Payload = {
       algorithm: "CMA-ES",
@@ -92,44 +109,48 @@ const ModalLayout = () => {
       iterations: parseInt(iterations),
       smi: smiles,
     };
-
+  
     try {
-      // Solution 1: Use a proxy API route
-      const response = await fetch("/api/nvidia-proxy", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          apiKey: API_KEY,
-          payload: payload,
-        }),
-      });
-
-      /* Solution 2: Use mode: "no-cors" (Comment out solution 1 and uncomment this if you prefer this approach)
-      const response = await fetch(apiEndpoint, {
-        method: "POST",
-        mode: "no-cors", // This prevents CORS errors but makes response unreadable
-        headers: {
-          Authorization: `Bearer ${API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
-      */
-
-      if (!response.ok) {
-        throw new Error(`API request failed with status ${response.status}`);
+      // First, try the proxy approach
+      console.log("Attempting to use proxy...");
+      let response: Response;
+      
+      try {
+        // Get the correct URL for the API route based on environment
+        const apiUrl: string = process.env.NEXT_PUBLIC_VERCEL_URL 
+          ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}/api/nvidia-proxy`
+          : '/api/nvidia-proxy';
+          
+        response = await fetch(apiUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            apiKey: API_KEY,
+            payload: payload
+          }),
+        });
+      } catch (proxyError) {
+        console.error("Proxy request failed:", proxyError);
+        throw new Error("Proxy request failed. See console for details.");
       }
-
+  
+      if (!response.ok) {
+        const errorData: { error?: string } | null = await response.json().catch(() => null);
+        throw new Error(
+          errorData?.error || `API request failed with status ${response.status}`
+        );
+      }
+  
       const data: ApiResponse = await response.json();
-      const generatedMolecules: Molecule[] = JSON.parse(data.molecules).map((mol: any) => ({
+      const generatedMolecules: Molecule[] = JSON.parse(data.molecules).map((mol: { sample: string; score: number }) => ({
         structure: mol.sample,
         score: mol.score,
       }));
-
+  
       setMolecules(generatedMolecules);
-
+  
       if (userId) {
         await createMoleculeGenerationHistory(
           {
@@ -142,17 +163,15 @@ const ModalLayout = () => {
           },
           userId,
         );
-
-        const updatedHistory = await getMoleculeGenerationHistoryByUser(userId);
+  
+        const updatedHistory: HistoryEntry[] = await getMoleculeGenerationHistoryByUser(userId);
         setHistory(updatedHistory);
       } else {
         console.error("User ID is not available.");
       }
-
-      console.log(generatedMolecules);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching data:", error);
-      setError("Failed to generate molecules. Please try again.");
+      setError(`Failed to generate molecules: ${error.message}`);
     } finally {
       setLoading(false);
     }
