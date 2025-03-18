@@ -75,10 +75,10 @@ const ModalLayout = () => {
     e.preventDefault();
     setLoading(true);
     setError(null);
-  
+    
     const API_KEY: string =
       "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";
-  
+    
     interface Payload {
       algorithm: string;
       num_molecules: number;
@@ -90,13 +90,9 @@ const ModalLayout = () => {
       smi: string;
     }
 
-    interface Molecule {
-      structure: string;
+    interface MoleculeResponse {
+      sample: string;
       score: number;
-    }
-
-    interface ApiResponse {
-      molecules: string;
     }
 
     const payload: Payload = {
@@ -111,46 +107,36 @@ const ModalLayout = () => {
     };
   
     try {
-      // First, try the proxy approach
-      console.log("Attempting to use proxy...");
-      let response: Response;
+      // Use a public CORS proxy service
+      const corsProxyUrl: string = 'https://corsproxy.io/?';
+      const targetUrl: string = 'https://health.api.nvidia.com/v1/biology/nvidia/molmim/generate';
       
-      try {
-        // Get the correct URL for the API route based on environment
-        const apiUrl: string = process.env.NEXT_PUBLIC_VERCEL_URL 
-          ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}/api/nvidia-proxy`
-          : '/api/nvidia-proxy';
-          
-        response = await fetch(apiUrl, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            apiKey: API_KEY,
-            payload: payload
-          }),
-        });
-      } catch (proxyError) {
-        console.error("Proxy request failed:", proxyError);
-        throw new Error("Proxy request failed. See console for details.");
-      }
-  
+      const response: Response = await fetch(`${corsProxyUrl}${encodeURIComponent(targetUrl)}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${API_KEY}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+      
       if (!response.ok) {
-        const errorData: { error?: string } | null = await response.json().catch(() => null);
-        throw new Error(
-          errorData?.error || `API request failed with status ${response.status}`
-        );
+        const errorText: string = await response.text();
+        console.error('API Error:', errorText);
+        throw new Error(`API request failed with status ${response.status}`);
       }
-  
-      const data: ApiResponse = await response.json();
-      const generatedMolecules: Molecule[] = JSON.parse(data.molecules).map((mol: { sample: string; score: number }) => ({
+      
+      const data: { molecules: string } = await response.json();
+      console.log("API Response:", data);
+      
+      const generatedMolecules: Molecule[] = JSON.parse(data.molecules).map((mol: MoleculeResponse) => ({
         structure: mol.sample,
         score: mol.score,
       }));
-  
+      
       setMolecules(generatedMolecules);
-  
+      
       if (userId) {
         await createMoleculeGenerationHistory(
           {
@@ -163,15 +149,15 @@ const ModalLayout = () => {
           },
           userId,
         );
-  
+        
         const updatedHistory: HistoryEntry[] = await getMoleculeGenerationHistoryByUser(userId);
         setHistory(updatedHistory);
       } else {
         console.error("User ID is not available.");
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error fetching data:", error);
-      setError(`Failed to generate molecules: ${error.message}`);
+      setError(`Failed to generate molecules: ${error instanceof Error ? error.message : "Unknown error"}`);
     } finally {
       setLoading(false);
     }
